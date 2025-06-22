@@ -88,6 +88,22 @@ def per_player_goal_proportion_of_total(
         pl.col(column).truediv(pl.col(column).sum()).alias("prop_total_goals")
     )
 
+def league_per_squad_player_with_max_prop_total_goals(
+    df: pl.DataFrame
+) -> pl.DataFrame:
+    to_return = pldf.with_columns(
+        squad_goals=pl.col("goals").sum().over("squad")
+    ).with_columns(
+        prop_squad_goals=pl.col("goals").truediv(pl.col("squad_goals"))
+    ).with_columns(
+        pl.col("prop_squad_goals").max().over("squad").alias("max_prop_squad_goals")
+    ).filter(
+        pl.col("prop_squad_goals").eq(pl.col("max_prop_squad_goals"))
+    ).select(
+        "squad", "player", "goals", "squad_goals", "prop_squad_goals"
+    ).sort(by="prop_squad_goals", descending=True)
+    return to_return
+
 
 def subset_fbref_df_to_champions(path_to_html: Path, champ: str) -> pd.DataFrame:
     html_read = pd.read_html(
