@@ -61,7 +61,12 @@ def fix_table(path_to_html: Path, tuples=MULTI_INDEX_TUPLES) -> pd.DataFrame:
     df: pd.DataFrame = df.iloc[:, :-1]
 
     # Fix the first seven columns that have an unnamed 0th index level
-    df.columns = pd.MultiIndex.from_tuples(tuples)
+    try:
+        df.columns = pd.MultiIndex.from_tuples(tuples)
+    except:
+        raise RuntimeError(
+            f"'{path_to_html.resolve()}' requires custom HTML parsing."
+        )
 
     # TODO: change all integers to int16 to save memory
 
@@ -71,7 +76,7 @@ def fix_table(path_to_html: Path, tuples=MULTI_INDEX_TUPLES) -> pd.DataFrame:
 def main() -> None:
     for f in (p for p in Path().glob("*.html") if p.is_file() and p.stat().st_size > 0):
         d: pd.DataFrame = fix_table(f)
-        d.to_csv(Path(f"{f.name}.csv"), index=False)
+        d.to_csv(f.with_suffix(".csv.gz"), compression="gzip", index=False)
     
 if __name__ == "__main__":
     main()
