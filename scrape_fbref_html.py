@@ -88,21 +88,21 @@ def per_player_goal_proportion_of_total(
         pl.col(column).truediv(pl.col(column).sum()).alias("prop_total_goals")
     )
 
-def league_per_squad_player_with_max_prop_total_goals(
-    df: pl.DataFrame
-) -> pl.DataFrame:
-    to_return = pldf.with_columns(
-        squad_goals=pl.col("goals").sum().over("squad")
-    ).with_columns(
-        prop_squad_goals=pl.col("goals").truediv(pl.col("squad_goals"))
-    ).with_columns(
-        pl.col("prop_squad_goals").max().over("squad").alias("max_prop_squad_goals")
-    ).filter(
-        pl.col("prop_squad_goals").eq(pl.col("max_prop_squad_goals"))
-    ).select(
-        "squad", "player", "goals", "squad_goals", "prop_squad_goals"
-    ).sort(by="prop_squad_goals", descending=True)
-    return to_return
+
+def league_per_squad_player_with_max_prop_total_goals(df: pl.DataFrame) -> pl.DataFrame:
+    return (
+        df.with_columns(squad_goals=pl.col("goals").sum().over("squad"))
+        .with_columns(prop_squad_goals=pl.col("goals").truediv(pl.col("squad_goals")))
+        .with_columns(
+            pl.col("prop_squad_goals")
+            .max()
+            .over("squad")
+            .alias("max_prop_squad_goals"),
+        )
+        .filter(pl.col("prop_squad_goals").eq(pl.col("max_prop_squad_goals")))
+        .select("squad", "player", "goals", "squad_goals", "prop_squad_goals")
+        .sort(by="prop_squad_goals", descending=True)
+    )
 
 
 def subset_fbref_df_to_champions(path_to_html: Path, champ: str) -> pd.DataFrame:
@@ -116,18 +116,17 @@ def subset_fbref_df_to_champions(path_to_html: Path, champ: str) -> pd.DataFrame
     cols = subset.columns.droplevel(0)
     subset.columns = cols
 
-    to_return = (
+    return (
         subset.loc[subset.iloc[:, 0].eq(champ), :]
         .drop(columns="Squad")
         .sort_values(by="Gls", ascending=False)
     )
-    return to_return
 
 
 def html_to_flat_dataframe(path_to_html: Path) -> pd.DataFrame:
     """The HTML will bring in a MultiIndex column; single-level index is desired."""
     html_read = pd.read_html(
-        path_to_html, flavor="lxml", dtype_backend="pyarrow", encoding="utf-8"
+        path_to_html, flavor="lxml", dtype_backend="pyarrow", encoding="utf-8",
     )
     df: pd.DataFrame = html_read[0]
     if df.shape[0] == 37:
@@ -135,9 +134,8 @@ def html_to_flat_dataframe(path_to_html: Path) -> pd.DataFrame:
     elif df.shape[0] == 25:
         df.columns = TWENTY_FIVE_COLUMN_INDEX
     else:
-        raise RuntimeError(
-            f"Unexpected number of columns, {df.shape[0]}, from file '{path_to_html.resolve()}'."
-        )
+        _msg: str = f"Unexpected number of columns, {df.shape[0]}, from file '{path_to_html.resolve()}'."
+        raise RuntimeError(_msg)
 
     desired_columns: list[str, str, str, str, str, str] = [
         "Squad",
@@ -159,12 +157,8 @@ def html_to_flat_dataframe(path_to_html: Path) -> pd.DataFrame:
         ],
     ]
     subset.columns = subset.columns.droplevel(0)
-    subset.loc[
-        :,
-        ["Age", "Min", "Gls", "Ast"]
-    ] = subset.loc[
-        :,
-        ["Age", "Min", "Gls", "Ast"]
+    subset.loc[:, ["Age", "Min", "Gls", "Ast"]] = subset.loc[
+        :, ["Age", "Min", "Gls", "Ast"]
     ].astype("int16[pyarrow]")
 
     return subset

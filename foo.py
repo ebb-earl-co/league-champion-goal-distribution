@@ -11,42 +11,42 @@ from pathlib import Path
 import pandas as pd
 
 MULTI_INDEX_TUPLES: tuple[tuple[str, str], ...] = (
-    (      'Demographics',       'Rk'),
-    (      'Demographics',   'Player'),
-    (      'Demographics',   'Nation'),
-    (      'Demographics',      'Pos'),
-    (      'Demographics',    'Squad'),
-    (      'Demographics',      'Age'),
-    (      'Demographics',     'Born'),
-    (      'Playing Time',       'MP'),
-    (      'Playing Time',   'Starts'),
-    (      'Playing Time',      'Min'),
-    (      'Playing Time',      '90s'),
-    (       'Performance',      'Gls'),
-    (       'Performance',      'Ast'),
-    (       'Performance',      'G+A'),
-    (       'Performance',     'G-PK'),
-    (       'Performance',       'PK'),
-    (       'Performance',    'PKatt'),
-    (       'Performance',     'CrdY'),
-    (       'Performance',     'CrdR'),
-    (          'Expected',       'xG'),
-    (          'Expected',     'npxG'),
-    (          'Expected',      'xAG'),
-    (          'Expected', 'npxG+xAG'),
-    (       'Progression',     'PrgC'),
-    (       'Progression',     'PrgP'),
-    (       'Progression',     'PrgR'),
-    (    'Per 90 Minutes',      'Gls'),
-    (    'Per 90 Minutes',      'Ast'),
-    (    'Per 90 Minutes',      'G+A'),
-    (    'Per 90 Minutes',     'G-PK'),
-    (    'Per 90 Minutes',   'G+A-PK'),
-    (    'Per 90 Minutes',       'xG'),
-    (    'Per 90 Minutes',      'xAG'),
-    (    'Per 90 Minutes',   'xG+xAG'),
-    (    'Per 90 Minutes',     'npxG'),
-    (    'Per 90 Minutes', 'npxG+xAG')
+    ("Demographics", "Rk"),
+    ("Demographics", "Player"),
+    ("Demographics", "Nation"),
+    ("Demographics", "Pos"),
+    ("Demographics", "Squad"),
+    ("Demographics", "Age"),
+    ("Demographics", "Born"),
+    ("Playing Time", "MP"),
+    ("Playing Time", "Starts"),
+    ("Playing Time", "Min"),
+    ("Playing Time", "90s"),
+    ("Performance", "Gls"),
+    ("Performance", "Ast"),
+    ("Performance", "G+A"),
+    ("Performance", "G-PK"),
+    ("Performance", "PK"),
+    ("Performance", "PKatt"),
+    ("Performance", "CrdY"),
+    ("Performance", "CrdR"),
+    ("Expected", "xG"),
+    ("Expected", "npxG"),
+    ("Expected", "xAG"),
+    ("Expected", "npxG+xAG"),
+    ("Progression", "PrgC"),
+    ("Progression", "PrgP"),
+    ("Progression", "PrgR"),
+    ("Per 90 Minutes", "Gls"),
+    ("Per 90 Minutes", "Ast"),
+    ("Per 90 Minutes", "G+A"),
+    ("Per 90 Minutes", "G-PK"),
+    ("Per 90 Minutes", "G+A-PK"),
+    ("Per 90 Minutes", "xG"),
+    ("Per 90 Minutes", "xAG"),
+    ("Per 90 Minutes", "xG+xAG"),
+    ("Per 90 Minutes", "npxG"),
+    ("Per 90 Minutes", "npxG+xAG"),
 )
 
 
@@ -63,10 +63,9 @@ def fix_table(path_to_html: Path, tuples=MULTI_INDEX_TUPLES) -> pd.DataFrame:
     # Fix the first seven columns that have an unnamed 0th index level
     try:
         df.columns = pd.MultiIndex.from_tuples(tuples)
-    except:
-        raise RuntimeError(
-            f"'{path_to_html.resolve()}' requires custom HTML parsing."
-        )
+    except Exception as e:
+        _msg: str = f"'{path_to_html.resolve()}' requires custom HTML parsing."
+        raise RuntimeError(_msg) from e
 
     # TODO: change all integers to int16 to save memory
 
@@ -74,9 +73,10 @@ def fix_table(path_to_html: Path, tuples=MULTI_INDEX_TUPLES) -> pd.DataFrame:
 
 
 def main() -> None:
-    for f in (p for p in Path().glob("*.html") if p.is_file() and p.stat().st_size > 0):
+    for f in (p for p in Path().glob("fbref_*.html") if p.is_file() and p.stat().st_size > 0):
         d: pd.DataFrame = fix_table(f)
         d.to_csv(f.with_suffix(".csv.gz"), compression="gzip", index=False)
-    
+
+
 if __name__ == "__main__":
     main()
